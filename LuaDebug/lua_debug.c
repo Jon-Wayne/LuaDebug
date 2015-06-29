@@ -8,8 +8,8 @@ void ld_init(lua_State *L)
 	printf("Value size : %d\n", sizeof(Value));
 	printf("StkId size : %d\n", sizeof(StkId));
 	printf("TString size : %d\n", sizeof(TString));
-	printf("TString::tsv size : %d\n", sizeof(TString::tsv));
-	printf("TString::dummy size : %d\n", sizeof(TString::dummy));
+	// printf("TString::tsv size : %d\n", sizeof(TString::tsv));
+	// printf("TString::dummy size : %d\n", sizeof(TString::dummy));
 }
 
 void ld_printstack(lua_State *L)
