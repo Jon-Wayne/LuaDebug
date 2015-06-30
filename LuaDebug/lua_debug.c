@@ -4,12 +4,22 @@
 
 void ld_init(lua_State *L)
 {
-	printf("TValue size : %d\n", sizeof(TValue));
-	printf("Value size : %d\n", sizeof(Value));
-	printf("StkId size : %d\n", sizeof(StkId));
-	printf("TString size : %d\n", sizeof(TString));
+	printf("TValue size : %lu\n", sizeof(TValue));
+	printf("Value size : %lu\n", sizeof(Value));
+	printf("StkId size : %lu\n", sizeof(StkId));
+	printf("TString size : %lu\n", sizeof(TString));
 	// printf("TString::tsv size : %d\n", sizeof(TString::tsv));
 	// printf("TString::dummy size : %d\n", sizeof(TString::dummy));
+    
+    // luaL_openlibs(L);
+    // lua_pushcfunction(L, ld_register);
+    // lua_register(L, n, f) // removed from 5.2
+    const luaL_Reg ld_cfuncs[] =
+    {
+        {"ld_printstack", ld_register},
+        {NULL, NULL}
+    };
+    luaL_register(L, "_G", ld_cfuncs);
 }
 
 void ld_printstack(lua_State *L)
@@ -19,37 +29,51 @@ void ld_printstack(lua_State *L)
 	StkId stack =L->stack;
 
 	StkId curr = top--;
-	int stackCount = 1;
+	int stackCount = (int)(top - stack);
 
-	printf("stack size :%d\n", top - stack);
+    printf("\n================================================ \n");
+	printf("===== stack size :%d\n", stackCount);
 
-	while (curr >= base)
+	while (stackCount > 0)
 	{
+        
 		Value value =  curr->value;
 		int type = curr->tt;
 		switch (type)
 		{
 		case LUA_TNIL:
-			printf("[%d]\tLUA_TNIL\n", stackCount);
+			printf("[%d]\t nil \n", stackCount);
 			break;
 		case LUA_TBOOLEAN:
-			printf("[%d]\tLUA_TBOOLEAN\t%s\n", stackCount, l_isfalse(curr) ? "false" : "true");
+			printf("[%d]\t bool \t%s\n", stackCount, l_isfalse(curr) ? "false" : "true");
 			break;
 		case LUA_TLIGHTUSERDATA:
-			printf("[%d]\tLUA_TLIGHTUSERDATA\t%p\n", stackCount, value.p);
+			printf("[%d]\t dataptr \t%p\n", stackCount, value.p);
 			break;
 		case LUA_TNUMBER:
-			printf("[%d]\tLUA_TNUMBER\t%d\n", stackCount, value.n);
+			printf("[%d]\t number \t%f\n", stackCount, value.n);
 			break;
 		case LUA_TSTRING:
-			printf("[%d]\tLUA_TSTRING\t%s\n", stackCount, (&(value.gc->ts) + 1));
+			printf("[%d]\t string \t%s\n", stackCount, &(value.gc->ts) + 1);
 			break;
 		case LUA_TTABLE:
-			printf("[%d]\tLUA_TTABLE\t\n", stackCount);
+			printf("[%d]\t table \t\n", stackCount);
 			break;
 		case LUA_TFUNCTION:
-			printf("[%d]\tLUA_TFUNCTION\t\n", stackCount);
-			
+            {
+                Closure clouse = value.gc->cl;
+                if (clouse.c.isC) {
+                    printf("[%d]\t cfunction \t%010p\n", stackCount, clouse.c.f);
+                } else {
+                    printf("[%d]\t lfunction \t%s\n", stackCount, clouse.l.p->source + 1);
+                    Instruction *currCode = clouse.l.p->code;
+                    for (int i=0; i<clouse.l.p->sizecode; i++) {
+                        OpCode opCode = GET_OPCODE(*currCode);
+                        printf("\t\t%u\t%s\n", opCode, luaP_opnames[opCode]);
+                        currCode++;
+                    }
+                }
+            }
 			break;
 		case LUA_TUSERDATA:
 			printf("[%d]\tLUA_TUSERDATA\t\n", stackCount);
@@ -63,6 +87,14 @@ void ld_printstack(lua_State *L)
 		}
 
 		curr--;
-		stackCount++;
+		stackCount--;
 	}
+    
+    printf("================================================ \n");
+}
+
+int ld_register(lua_State *L)
+{
+    ld_printstack(L);
+    return 0;
 }
