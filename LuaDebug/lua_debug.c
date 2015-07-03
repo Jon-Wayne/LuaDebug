@@ -2,8 +2,17 @@
 
 #define LDLOG(var) do { printf("*** [LueDebug] *** :"); printf((var)); printf("\n"); } while (0)
 
-void ld_init(lua_State *L)
+ld_Info *ld_new(lua_State *L)
 {
+    if (!L) {
+        return NULL;
+    }
+    
+    ld_Info *ldInfo = (ld_Info *)malloc(sizeof(ld_Info));
+    memset(ldInfo, 0, sizeof(ld_Info));
+    
+    ldInfo->L = L;
+
 	printf("TValue size : %lu\n", sizeof(TValue));
 	printf("Value size : %lu\n", sizeof(Value));
 	printf("StkId size : %lu\n", sizeof(StkId));
@@ -20,6 +29,8 @@ void ld_init(lua_State *L)
         {NULL, NULL}
     };
     luaL_register(L, "_G", ld_cfuncs);
+    
+    return ldInfo;
 }
 
 void ld_printstack(lua_State *L)
